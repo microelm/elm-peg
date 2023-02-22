@@ -2,3 +2,9 @@
 elm-stuff
 # elm-repl generated files
 repl-temp-*
+
+# OS stuff
+.DS_Store
+.vscode
+*.iml
+.idea

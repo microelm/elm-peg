@@ -1,0 +1,167 @@
+[
+  {
+    "name": "Peg",
+    "comment": "\n\n\n## Functions\n\n@docs parse, fromString\n\n\n## Types\n\n@docs Grammar, Actions, Predicate, Error\n\n",
+    "unions": [],
+    "aliases": [
+      {
+        "name": "Actions",
+        "comment": " The `Actions` type alias represents a function that is responsible for\nperforming an action on collected data. An `Action` is associated with a string,\nwhich is the name of the action.\n\nActions take the following arguments:\n\n\n## Arguments\n\n  - `actionName` (String): the name of the action\n  - `matchedText` (String): the matched text\n  - `currentState` (state): the current state\n\n\n## Arguments\n\n  - `Result` (Result String state): a `Result` that contains either an error\n    message or the updated state.\n\n  - If the `Result` contains an error message, parsing will be halted and the\n    error message will be returned.\n\n  - If the `Result` contains an updated state, parsing will continue with the new\n    state.\n\nSee [`parse`](#parse) for an example of how to use parsing actions with the parser.\n\n",
+        "args": [
+          "state"
+        ],
+        "type": "String.String -> String.String -> state -> Result.Result String.String state"
+      },
+      {
+        "name": "Error",
+        "comment": " Represents an error that occurred during parsing.\n\nThe `position` field is the 0-based index in the input string where the error\noccurred, and the `message` field provides a description of the error.\n\n",
+        "args": [],
+        "type": "{ position : Basics.Int, message : String.String }"
+      },
+      {
+        "name": "Grammar",
+        "comment": " Represents a PEG grammar as a list of rules, each consisting of a name and a\ncorresponding `Rule` value.\n\nThe `Rule` value should be a valid PEG grammar rule that can be parsed by the\n`fromString` function.\n\nSee [`fromString`](#fromString) for an example of how to create a `Grammar` from a\nstring representation of a PEG grammar.\n\n",
+        "args": [],
+        "type": "List.List ( String.String, Peg.Rule.Rule )"
+      },
+      {
+        "name": "Predicate",
+        "comment": " Represents a predicate that accepts the name of the predicate, the matched string,\nand the current state, and returns a Boolean value and an updated state.\n\n\n## Arguments\n\n  - `predicateName` (String) : The name of the predicate.\n  - `matchedText` (String) : The matched text.\n  - `state` (state) : The current state.\n\n\n## Returns\n\nA tuple containing a Boolean value indicating whether the predicate succeeded or failed, and an updated state.\n\n\n## Example\n\n    myPredicate : Predicate String\n    myPredicate predicateName matchedText state =\n        ( String.contains \"hello\" matchedText, state )\n\n",
+        "args": [
+          "state"
+        ],
+        "type": "String.String -> String.String -> state -> ( Basics.Bool, state )"
+      }
+    ],
+    "values": [
+      {
+        "name": "fromString",
+        "comment": " Parses a PEG grammar represented as a string and returns a `Result`\ncontaining the parsed `Grammar`.\n\n\n## Arguments\n\n  - `input` (`String`) : The PEG grammar represented as a string.\n\n\n## Arguments\n\n  - `Result Error Grammar` : A `Result` containing the parsed `Grammar`, or an error message.\n\n\n## Example\n\n    import Peg exposing (Error, fromString, parse)\n\n    grammarString : String\n    grammarString =\n        \"\"\"\n        start <- <digit+> {action}\n        digit <- [0-9]\n        \"\"\"\n\n    -- Parse the grammar string\n    result : Result Error Grammar\n    result =\n        fromString grammarString\n\n    -- Check if the parse succeeded\n    case result of\n        Ok grammar ->\n            Debug.log \"Parsed grammar\" grammar\n\n        Err error ->\n            Debug.log \"Parse error\" error\n\n",
+        "type": "String.String -> Result.Result Peg.Parse.Error Peg.Grammar"
+      },
+      {
+        "name": "parse",
+        "comment": " Parses the given input string using the specified PEG grammar.\nReturns a `Result` that is either `Ok` with the parsed result or `Err` with an error message.\n\n\n## Arguments\n\n  - `grammar` (`Grammar`) : A valid PEG grammar represented as a list of `(String, Rule)` pairs.\n  - `state` (`a`) : The initial state that will be passed to the actions.\n  - `actions` (`Actions a`) : The actions that will be performed on the matched input.\n  - `predicate` (`Predicate a`) : The predicates that will be evaluated on the matched input.\n  - `input` (`String`) : The input string to parse.\n\n\n## Arguments\n\n  - `Result Error a` : The result of the parse, which is either `Ok` with the parsed result or `Err` with an error message.\n\n\n## Example\n\n    import Html\n    import Peg exposing (Error, fromString, parse)\n\n    grammarString : String\n    grammarString =\n        \"\"\"\n        start <- <digit+> {action}\n        digit <- [0-9]\n        \"\"\"\n\n    {-| Parse a string with the grammar\n    -}\n    result : Result Error String\n    result =\n        let\n            actions _ found _ =\n                Ok found\n\n            predicate _ _ state =\n                ( True, state )\n        in\n        grammarString\n            |> fromString\n            |> Result.andThen (\\grammar -> parse grammar \"\" actions predicate \"123\")\n\n    {-| Check if the parse succeeded\n    -}\n    main =\n        case result of\n            Ok value ->\n                Html.text (\"Parsed value: \" ++ value)\n\n            Err error ->\n                Html.text (\"Parse error: \" ++ error.message)\n\n",
+        "type": "Peg.Grammar -> state -> Peg.Actions state -> Peg.Predicate state -> String.String -> Result.Result Peg.Error state"
+      }
+    ],
+    "binops": []
+  },
+  {
+    "name": "Peg.Rule",
+    "comment": "\n\n@docs Rule\n\n",
+    "unions": [
+      {
+        "name": "Rule",
+        "comment": " Represents a PEG rule.\n\n\n## Variants\n\n  - **Sequence** Represents a sequence of rules that must be matched in order\n  - **Choice** Represents a list of rules, where only one must be matched\n  - **ZeroOrMore** Represents zero or more repetitions of a rule\n  - **OneOrMore** Represents one or more repetitions of a rule\n  - **Optional** Represents an optional rule that may or may not be matched\n  - **ConditionalPredicate** Represents a conditional predicate, where the associated expression is evaluated to determine the success or failure of the match\n  - **PositiveLookahead** Represents a predicate that must be matched for the overall match to succeed, but the input is not consumed and remains available for subsequent matching\n  - **NegativeLookahead** Represents a predicate that must not be matched for the overall match to succeed\n  - **Collect** Represents a rule that collects all mached data\n  - **Action** Represents an action that should be performedi on collected data.\n  - **MatchLiteral** Represents a rule that matches a specific string\n  - **MatchAny** Represents a rule that matches any single character\n  - **MatchNot** Represents a rule that matches any single character except the specified one\n  - **RuleRef** Represents a reference to another rule in the PEG grammar\n\n",
+        "args": [],
+        "cases": [
+          [
+            "Sequence",
+            [
+              "List.List Peg.Rule.Rule"
+            ]
+          ],
+          [
+            "Choice",
+            [
+              "List.List Peg.Rule.Rule"
+            ]
+          ],
+          [
+            "ZeroOrMore",
+            [
+              "Peg.Rule.Rule"
+            ]
+          ],
+          [
+            "OneOrMore",
+            [
+              "Peg.Rule.Rule"
+            ]
+          ],
+          [
+            "Optional",
+            [
+              "Peg.Rule.Rule"
+            ]
+          ],
+          [
+            "ConditionalPredicate",
+            [
+              "String.String"
+            ]
+          ],
+          [
+            "PositiveLookahead",
+            [
+              "Peg.Rule.Rule"
+            ]
+          ],
+          [
+            "NegativeLookahead",
+            [
+              "Peg.Rule.Rule"
+            ]
+          ],
+          [
+            "Collect",
+            [
+              "Peg.Rule.Rule"
+            ]
+          ],
+          [
+            "Action",
+            [
+              "String.String"
+            ]
+          ],
+          [
+            "MatchLiteral",
+            [
+              "String.String"
+            ]
+          ],
+          [
+            "MatchAny",
+            []
+          ],
+          [
+            "MatchNot",
+            [
+              "Char.Char"
+            ]
+          ],
+          [
+            "RuleRef",
+            [
+              "String.String"
+            ]
+          ]
+        ]
+      }
+    ],
+    "aliases": [],
+    "values": [],
+    "binops": []
+  },
+  {
+    "name": "Peg.Test",
+    "comment": "\n\n@docs compareRules, compareRuleLists\n\n",
+    "unions": [],
+    "aliases": [],
+    "values": [
+      {
+        "name": "compareRuleLists",
+        "comment": " Compare two lists of PEG grammar rules for equality. Returns `Err message` if the rules are different, or `Ok ()` if they are the same.\n\n\n# Arguments\n\n  - `expected` - The expected list of rules to compare.\n  - `actual` - The actual list of rules to compare.\n\n\n# Returns\n\n  - `Result String ()` - `Err message` if the rules are different, or `Ok ()` if they are the same.\n\n\n# Example\n\n    compareRuleLists\n        [ Sequence [MatchLiteral \"a\", MatchLiteral \"b\"]\n        , Optional (MatchLiteral \"c\")\n        , RuleRef \"foo\"\n        ]\n        [ Sequence [MatchLiteral \"a\", MatchLiteral \"b\"]\n        , Optional (MatchLiteral \"c\")\n        , RuleRef \"foo\"\n        ]\n    --> Ok ()\n\n    compareRuleLists\n        [ Sequence [MatchLiteral \"a\", MatchLiteral \"b\"]\n        , Optional (MatchLiteral \"c\")\n        , RuleRef \"foo\"\n        ]\n        [ Sequence [MatchLiteral \"a\", MatchLiteral \"b\"]\n        , ZeroOrMore (MatchLiteral \"c\")\n        , RuleRef \"foo\"\n        ]\n    --> Err \"expected: Optional (MatchLiteral \\\"c\\\"), actual: ZeroOrMore (MatchLiteral \\\"c\\\") at position 1\"\n\n",
+        "type": "List.List Peg.Rule.Rule -> List.List Peg.Rule.Rule -> Result.Result String.String ()"
+      },
+      {
+        "name": "compareRules",
+        "comment": " Compare two PEG grammar rules for equality. Returns `Err message` if the rules are different, or `Ok ()` if they are the same.\n\n\n## Arguments\n\n  - `expected` - The expected rule to compare.\n  - `actual` - The actual rule to compare.\n\n\n## Returns\n\n  - `Result String ()` - `Err message` if the rules are different, or `Ok ()` if they are the same.\n\n\n## Example\n\n    compareRules\n        (Sequence [MatchLiteral \"a\", MatchLiteral \"b\"])\n        (Sequence [MatchLiteral \"a\", MatchLiteral \"b\"])\n    --> Ok ()\n\n    compareRules\n        (Sequence [MatchLiteral \"a\", MatchLiteral \"b\"])\n        (Sequence [MatchLiteral \"a\", MatchLiteral \"c\"])\n    --> Err \"expected: MatchLiteral \\\"b\\\", actual: MatchLiteral \\\"c\\\" at position 2\"\n\n",
+        "type": "Peg.Rule.Rule -> Peg.Rule.Rule -> Result.Result String.String ()"
+      }
+    ],
+    "binops": []
+  }
+]
