@@ -62,7 +62,7 @@ Actions take the following arguments:
   - `currentState` (state): the current state
 
 
-## Arguments
+## Returns
 
   - `Result` (Result String state): a `Result` that contains either an error
     message or the updated state.
@@ -120,7 +120,7 @@ Returns a `Result` that is either `Ok` with the parsed result or `Err` with an e
   - `input` (`String`) : The input string to parse.
 
 
-## Arguments
+## Returns
 
   - `Result Error a` : The result of the parse, which is either `Ok` with the parsed result or `Err` with an error message.
 
@@ -128,7 +128,7 @@ Returns a `Result` that is either `Ok` with the parsed result or `Err` with an e
 ## Example
 
     import Html
-    import Peg exposing (Error, fromString, parse)
+    import Peg exposing (Error)
 
     grammarString : String
     grammarString =
@@ -149,8 +149,8 @@ Returns a `Result` that is either `Ok` with the parsed result or `Err` with an e
                 ( True, state )
         in
         grammarString
-            |> fromString
-            |> Result.andThen (\grammar -> parse grammar "" actions predicate "123")
+            |> Peg.fromString
+            |> Result.andThen (\grammar -> Peg.parse grammar "" actions predicate "123")
 
     {-| Check if the parse succeeded
     -}
@@ -177,7 +177,7 @@ containing the parsed `Grammar`.
   - `input` (`String`) : The PEG grammar represented as a string.
 
 
-## Arguments
+## Returns
 
   - `Result Error Grammar` : A `Result` containing the parsed `Grammar`, or an error message.
 
@@ -189,7 +189,7 @@ containing the parsed `Grammar`.
     grammarString : String
     grammarString =
         """
-        start <- <digit+> {action}
+        start <- digit+
         digit <- [0-9]
         """
 

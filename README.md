@@ -1,5 +1,7 @@
 # Parsing expression grammar (PEG) in elm
 
+[![Elm Package](https://img.shields.io/elm-package/v/microelm/elm-peg.svg)](https://package.elm-lang.org/packages/microelm/elm-peg/latest/)
+
 # Elm PEG Parser
 
 Elm PEG Parser is a library for parsing text using Parsing Expression Grammar (PEG).
@@ -15,14 +17,12 @@ elm install microelm/elm-peg
 
 ## Getting Started
 
-To get started with Elm PEG Parser, you first need to define a PEG grammar using the `Grammar` type. Once you have
-defined
-your grammar, you can use the parse function to parse input text using the grammar.
+To use Elm PEG Parser, start by defining a grammar using the `Peg.Grammar` type. Once you've defined your grammar, you can parse input text using the `parse` function.
 
 ```elm
 
 import Html
-import Peg exposing (Error, fromString, parse)
+import Peg exposing (Error)
 
 
 grammarString : String
@@ -45,8 +45,8 @@ result =
             ( True, state )
     in
     grammarString
-        |> fromString
-        |> Result.andThen (\grammar -> parse grammar "" actions predicate "123")
+        |> Peg.fromString
+        |> Result.andThen (\grammar -> Peg.parse grammar "" actions predicate "123")
 
 
 {-| Check if the parse succeeded
