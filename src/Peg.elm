@@ -164,8 +164,9 @@ Returns a `Result` that is either `Ok` with the parsed result or `Err` with an e
 
 -}
 parse : Grammar -> state -> Actions state -> Predicate state -> String -> Result Error state
-parse =
-    Peg.Parse.parse
+parse grammar initialState actions predicates input =
+    Peg.Parse.parse grammar initialState actions predicates input
+        |> stripError
 
 
 {-| Parses a PEG grammar represented as a string and returns a `Result`
@@ -207,6 +208,12 @@ containing the parsed `Grammar`.
             Debug.log "Parse error" error
 
 -}
-fromString : String -> Result Peg.Parse.Error Grammar
+fromString : String -> Result Error Grammar
 fromString =
     Peg.PegInPeg.fromString
+        >> stripError
+
+
+stripError : Result { a | position : b, message : c } d -> Result { position : b, message : c } d
+stripError =
+    Result.mapError (\err -> { position = err.position, message = err.message })

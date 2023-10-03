@@ -45,12 +45,19 @@ parse grammar initialState actions predicates input =
             Err
                 { position = 0
                 , message = "No rules in grammar"
+                , code = Critical
                 }
+
+
+type ErrorCode
+    = Critical
+    | NotMatch
 
 
 type alias Error =
     { position : Int
     , message : String
+    , code : ErrorCode
     }
 
 
@@ -101,6 +108,7 @@ parseRule parserState rule =
                 Err
                     { position = parserState.position
                     , message = "ConditionalPredicate not fully implemented"
+                    , code = NotMatch
                     }
 
         NegativeLookahead notRule ->
@@ -151,6 +159,7 @@ parseOrderedChoice parserState rules =
             Err
                 { position = parserState.position
                 , message = "No rules matched"
+                , code = NotMatch
                 }
 
         rule :: remainingRules ->
@@ -159,7 +168,11 @@ parseOrderedChoice parserState rules =
                     Ok updatedState
 
                 Err error ->
-                    parseOrderedChoice parserState remainingRules
+                    if error.code == Critical then
+                        Err error
+
+                    else
+                        parseOrderedChoice parserState remainingRules
 
 
 {-| parseZeroOrMore parses zero or more repetitions of a rule in a PEG grammar.
@@ -172,8 +185,12 @@ parseZeroOrMore parserState rule =
                 Ok nextState ->
                     parseMore nextState
 
-                Err _ ->
-                    Ok updatedState
+                Err err ->
+                    if err.code == Critical then
+                        Err err
+
+                    else
+                        Ok updatedState
     in
     parseMore parserState
 
@@ -220,10 +237,18 @@ parseNotPredicate : ParserState state -> Rule -> Result Error (ParserState state
 parseNotPredicate parserState rule =
     case parseRule parserState rule of
         Ok _ ->
-            Err { position = parserState.position, message = "Unexpected match" }
+            Err
+                { position = parserState.position
+                , message = "Unexpected match when parseNotPredicate"
+                , code = NotMatch
+                }
 
-        Err _ ->
-            Ok parserState
+        Err err ->
+            if err.code == Critical then
+                Err err
+
+            else
+                Ok parserState
 
 
 {-| parsePredicate parses a conditional predicate in a PEG grammar,
@@ -244,7 +269,11 @@ parseAction parserState action =
             Ok { parserState | state = state }
 
         Err err ->
-            Err { position = .position parserState, message = "Fail Action(" ++ action ++ "): " ++ err }
+            Err
+                { position = .position parserState
+                , message = "Fail Action(" ++ action ++ "): " ++ err
+                , code = Critical
+                }
 
 
 parseCollect : ParserState state -> Rule -> Result Error (ParserState state)
@@ -282,7 +311,11 @@ parseMatchAny parserState =
             Ok updatedParserState
 
     else
-        Err { position = position, message = "Unexpected end of input" }
+        Err
+            { position = position
+            , message = "parseMatchAny: Unexpected end of input"
+            , code = NotMatch
+            }
 
 
 parseMatchNot : ParserState state -> Char -> Result Error (ParserState state)
@@ -309,7 +342,11 @@ parseMatchNot parserState character =
             Ok updatedParserState
 
     else
-        Err { position = position, message = "Unexpected end of input" }
+        Err
+            { position = position
+            , message = "parseMatchNot: Unexpected end of input"
+            , code = NotMatch
+            }
 
 
 {-| parseMatch parses a rule in a PEG grammar that matches a specific string.
@@ -332,7 +369,11 @@ parseMatchLiteral parserState string =
             Ok updatedParserState
 
     else
-        Err { position = position, message = "Match failed" }
+        Err
+            { position = position
+            , message = "parseMatchLiteral: Match failed"
+            , code = NotMatch
+            }
 
 
 {-| parseRuleRef parses a reference to another rule in a PEG grammar.
@@ -344,4 +385,8 @@ parseRuleRef parserState ref =
             parseRule parserState rule
 
         Nothing ->
-            Err { position = .position parserState, message = "Rule not found" }
+            Err
+                { position = .position parserState
+                , message = "Rule \"" ++ ref ++ "\" not found"
+                , code = Critical
+                }
